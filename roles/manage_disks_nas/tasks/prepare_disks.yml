@@ -1,20 +1,10 @@
 ---
-- name: Wipe all partitions from data disks
+- name: Wipe all partitions from disks
   command: "parted {{ item }} --script mklabel gpt"
-  loop: "{{ data_disks }}"
+  loop: "{{ data_disks + parity_disks + cache_disks }}"
   when: wipe_and_setup
 
-- name: Wipe all partitions from parity disks
-  command: "parted {{ item }} --script mklabel gpt"
-  loop: "{{ parity_disks }}"
-  when: wipe_and_setup
-
-- name: Wipe all partitions from cache disks
-  command: "parted {{ item }} --script mklabel gpt"
-  loop: "{{ cache_disks }}"
-  when: wipe_and_setup
-
-- name: Create a new partition on data disks
+- name: Create a new partition on disks
   ansible.builtin.parted:
     device: "{{ item }}"
     number: 1
@@ -22,7 +12,7 @@
     label: gpt
     part_start: 0%
     part_end: 100%
-  loop: "{{ data_disks }}"
+  loop: "{{ data_disks + parity_disks + cache_disks }}"
 
 - name: Format data drives with BTRFS
   ansible.builtin.filesystem:
@@ -31,32 +21,12 @@
     force: "{{ force_formatting }}"
   loop: "{{ data_disks }}"
 
-- name: Create a new partition on parity disks
-  ansible.builtin.parted:
-    device: "{{ item }}"
-    number: 1
-    state: present
-    label: gpt
-    part_start: 0%
-    part_end: 100%
-  loop: "{{ parity_disks }}"
-
 - name: Format parity drives with ext4
   ansible.builtin.filesystem:
     fstype: ext4
     dev: "{{ item }}{{ '-part1' if 'nvme' not in item else '-p1' }}"
     force: "{{ force_formatting }}"
   loop: "{{ parity_disks }}"
-
-- name: Create a new partition on cache disks
-  ansible.builtin.parted:
-    device: "{{ item }}"
-    number: 1
-    state: present
-    label: gpt
-    part_start: 0%
-    part_end: 100%
-  loop: "{{ cache_disks }}"
 
 - name: Format cache drives with ext4
   ansible.builtin.filesystem:
@@ -74,20 +44,11 @@
   loop_control:
     label: "{{ item }}"
 
-- name: Check if parity disks are correctly formatted with ext4
+- name: Check if parity and cache disks are correctly formatted with ext4
   command: "blkid {{ item }}-part1"
-  register: blkid_output_parity
-  loop: "{{ parity_disks }}"
+  register: blkid_output_parity_cache
+  loop: "{{ parity_disks + cache_disks }}"
   changed_when: false
-  failed_when: "'TYPE=\"ext4\"' not in blkid_output_parity.stdout"
-  loop_control:
-    label: "{{ item }}"
-
-- name: Check if cache disks are correctly formatted with ext4
-  command: "blkid {{ item }}-part1"
-  register: blkid_output_cache
-  loop: "{{ cache_disks }}"
-  changed_when: false
-  failed_when: "'TYPE=\"ext4\"' not in blkid_output_cache.stdout"
+  failed_when: "'TYPE=\"ext4\"' not in blkid_output_parity_cache.stdout"
   loop_control:
     label: "{{ item }}"
