@@ -3,6 +3,6 @@
   ansible.builtin.include_tasks:
     file: prepare_disks.yml
 
-# - name: Configure SnapRAID Subvolumes
-#   ansible.builtin.include_tasks:
-#     file: configure_subvolumes.yml
+- name: Configure btrfs Subvolumes
+  ansible.builtin.include_tasks:
+    file: configure_subvolumes.yml

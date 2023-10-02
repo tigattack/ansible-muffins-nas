@@ -1,3 +1,7 @@
 ---
+roles:
+  - src: stefangweichinger.ansible_rclone
 
-- src: stefangweichinger.ansible_rclone
+collections:
+  - name: community.general
+

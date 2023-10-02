@@ -1,1 +1,47 @@
----
+- name: Ensure base mount point exists
+  ansible.builtin.file:
+    path: "/mnt/btrfs-root"
+    state: directory
+
+- name: Ensure individual mount point exists
+  ansible.builtin.file:
+    path: "/mnt/btrfs-root/{{ item | basename }}"
+    state: directory
+  loop: "{{ data_disks }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Mount the Btrfs filesystem
+  ansible.builtin.mount:
+    path: "/mnt/btrfs-root/{{ item | basename }}"
+    src: "{{ item }}-part1"
+    fstype: btrfs
+    state: mounted
+  loop: "{{ data_disks }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Create Btrfs /data subvolume using command
+  command: "btrfs subvolume create /mnt/btrfs-root/{{ item | basename }}/data"
+  loop: "{{ data_disks }}"
+  loop_control:
+    label: "{{ item }}"
+  ignore_errors: yes
+
+- name: Check if /data subvolume exists
+  shell: "btrfs subvolume list /mnt/btrfs-root/{{ item | basename }} | grep data"
+  with_items: "{{ data_disks }}"
+  register: result
+  failed_when: result.rc != 0
+
+- name: Unmount the fs
+  command: "umount /mnt/btrfs-root/{{ item | basename }}"
+  with_items: "{{ data_disks }}"
+
+- name: Remove individual mount points
+  ansible.builtin.file:
+    path: "/mnt/btrfs-root/{{ item | basename }}"
+    state: absent
+  loop: "{{ data_disks }}"
+  loop_control:
+    label: "{{ item }}"
