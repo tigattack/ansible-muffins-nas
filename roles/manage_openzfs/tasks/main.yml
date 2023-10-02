@@ -5,70 +5,9 @@
   changed_when: false
   ignore_errors: true
 
-- name: Ensure universe repository is enabled (Ubuntu only)
-  ansible.builtin.lineinfile:
-    path: /etc/apt/sources.list
-    line: "deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }} main universe"
-    state: present
-  when:
-    - ansible_distribution == "Ubuntu"
-    - zfs_installed.stdout == "0"
-  notify: Update apt cache
-
-- name: Ensure the backports list file exists (Debian)
-  ansible.builtin.file:
-    path: /etc/apt/sources.list.d/bookworm-backports.list
-    state: touch
-    owner: root
-    group: root
-    mode: '0644'
-  when:
-    - ansible_distribution == "Debian"
-    - zfs_installed.stdout == "0"
-
-- name: Add Debian backports repository
-  ansible.builtin.lineinfile:
-    path: /etc/apt/sources.list.d/bookworm-backports.list
-    line: "{{ item }}"
-    state: present
-  with_items:
-    - "deb http://deb.debian.org/debian bookworm-backports main contrib"
-    - "deb-src http://deb.debian.org/debian bookworm-backports main contrib"
-  when:
-    - ansible_distribution == "Debian"
-    - zfs_installed.stdout == "0"
-
-
-- name: Set priority for ZFS packages from backports
-  ansible.builtin.copy:
-    dest: /etc/apt/preferences.d/90_zfs
-    content: |
-      Package: src:zfs-linux
-      Pin: release n=bookworm-backports
-      Pin-Priority: 990
-  when:
-    - ansible_distribution == "Debian"
-    - zfs_installed.stdout == "0"
-
-- name: Install necessary packages for ZFS (Debian)
-  ansible.builtin.apt:
-    name: "{{ item }}"
-    state: latest
-  with_items:
-    - dpkg-dev
-    - linux-headers-generic
-    - linux-image-generic
-    - zfs-dkms
-    - zfsutils-linux
-  when:
-    - ansible_distribution == "Debian"
-    - zfs_installed.stdout == "0"
-
-- name: Install or Upgrade ZFS utilities (Ubuntu)
-  ansible.builtin.apt:
-    name: zfsutils-linux
-    state: latest
-  when: ansible_distribution == "Ubuntu"
+- name: Install zfsutils
+  ansible.builtin.include_tasks:
+    file: "{{ ansible_distribution | lower }}.yml"
 
 - name: Load ZFS module
   ansible.builtin.command:
