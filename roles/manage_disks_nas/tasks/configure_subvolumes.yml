@@ -24,7 +24,7 @@
 - name: Mount the main Btrfs filesystem partition
   ansible.posix.mount:
     path: "/mnt/btrfs-root/{{ item | basename }}"
-    src: "{{ item }}-part1"
+    src: "{{ item }}-part1" # TODO: should this use the same -part1 if else 1 logic from prepare_disks?
     fstype: btrfs
     state: mounted
   loop: "{{ data_disks }}"

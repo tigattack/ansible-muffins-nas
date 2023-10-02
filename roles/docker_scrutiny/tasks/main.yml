@@ -24,7 +24,7 @@
     name: scrutiny
     image: "{{ scrutiny_image }}"
     state: started
-    recreate: yes
+    recreate: yes # TODO: is this wanted on every run? module already recreates container if necessary
     pull: true
     ports: "{{ scrutiny_ports }}"
     volumes: "{{ scrutiny_volumes }}"
