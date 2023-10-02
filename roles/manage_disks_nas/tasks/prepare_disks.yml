@@ -1,3 +1,19 @@
+---
+- name: Wipe all partitions from data disks
+  command: "parted {{ item }} --script mklabel gpt"
+  loop: "{{ data_disks }}"
+  when: wipe_and_setup
+
+- name: Wipe all partitions from parity disks
+  command: "parted {{ item }} --script mklabel gpt"
+  loop: "{{ parity_disks }}"
+  when: wipe_and_setup
+
+- name: Wipe all partitions from cache disks
+  command: "parted {{ item }} --script mklabel gpt"
+  loop: "{{ cache_disks }}"
+  when: wipe_and_setup
+
 - name: Create a new partition on data disks
   ansible.builtin.parted:
     device: "{{ item }}"
@@ -12,9 +28,8 @@
   ansible.builtin.filesystem:
     fstype: btrfs
     dev: "{{ item }}{{ '-part1' if 'nvme' not in item else '-p1' }}"
-    force: true
+    force: "{{ force_formatting }}"
   loop: "{{ data_disks }}"
-  when: not (item ~ '/dev/.*-part1$')
 
 - name: Create a new partition on parity disks
   ansible.builtin.parted:
@@ -30,9 +45,8 @@
   ansible.builtin.filesystem:
     fstype: ext4
     dev: "{{ item }}{{ '-part1' if 'nvme' not in item else '-p1' }}"
-    force: true
+    force: "{{ force_formatting }}"
   loop: "{{ parity_disks }}"
-  when: not (item ~ '/dev/.*-part1$')
 
 - name: Create a new partition on cache disks
   ansible.builtin.parted:
@@ -48,7 +62,32 @@
   ansible.builtin.filesystem:
     fstype: ext4
     dev: "{{ item }}{{ '-part1' if 'nvme' in item else '1' }}"
-    force: true
+    force: "{{ force_formatting }}"
   loop: "{{ cache_disks }}"
-  when: not (item ~ '/dev/.*-part1$')
 
+- name: Check if data disks are correctly formatted with BTRFS
+  command: "blkid {{ item }}-part1"
+  register: blkid_output_data
+  loop: "{{ data_disks }}"
+  changed_when: false
+  failed_when: "'TYPE=\"btrfs\"' not in blkid_output_data.stdout"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Check if parity disks are correctly formatted with ext4
+  command: "blkid {{ item }}-part1"
+  register: blkid_output_parity
+  loop: "{{ parity_disks }}"
+  changed_when: false
+  failed_when: "'TYPE=\"ext4\"' not in blkid_output_parity.stdout"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Check if cache disks are correctly formatted with ext4
+  command: "blkid {{ item }}-part1"
+  register: blkid_output_cache
+  loop: "{{ cache_disks }}"
+  changed_when: false
+  failed_when: "'TYPE=\"ext4\"' not in blkid_output_cache.stdout"
+  loop_control:
+    label: "{{ item }}"
