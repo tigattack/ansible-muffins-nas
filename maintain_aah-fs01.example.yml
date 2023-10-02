@@ -7,7 +7,9 @@
   roles:
     - manage_linux
     - manage_omzsh
-    - install_docker
+    - role: geerlingguy.docker
+      vars:
+        docker_users: [YOUR USERNAME]
     - install_mergerfs
     - install_snapraid
     - install_btrfs
