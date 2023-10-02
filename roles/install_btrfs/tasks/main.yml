@@ -11,20 +11,23 @@
   ignore_errors: true
 
 - name: Set update_needed to true if btrfs is not installed
-  set_fact:
+  ansible.builtin.set_fact:
     update_needed: true
   when: installed_version.rc != 0
 
-- name: Get latest release information from GitHub for btrfs-progs
-  ansible.builtin.uri:
-    url: "https://api.github.com/repos/kdave/btrfs-progs/releases/latest"
-    return_content: yes
-  register: btrfs_github_release_page
-  check_mode: false
+- name: Find latest release of mergerfs
+  community.general.github_release:
+    user: kdave
+    repo: btrfs-progs
+    action: latest_release
+  register: btrfs_latest_release
+  delegate_to: localhost
+  run_once: true
+  become: false
 
 - name: Set latest btrfs-progs version fact
   ansible.builtin.set_fact:
-    btrfs_latest_version: "{{ btrfs_github_release_page.json.tag_name[1:] }}"
+    btrfs_latest_version: "{{ btrfs_latest_release.tag }}"
 
 - name: Extract version number from installed version
   ansible.builtin.set_fact:
