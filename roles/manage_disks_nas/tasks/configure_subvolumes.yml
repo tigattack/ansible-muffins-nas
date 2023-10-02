@@ -22,11 +22,16 @@
   changed_when: false
 
 - name: Mount the main Btrfs filesystem partition
-  ansible.builtin.command:
-    cmd: "mount -t btrfs {{ item }}-part1 /mnt/btrfs-root/{{ item | basename }}"
+  ansible.posix.mount:
+    path: "/mnt/btrfs-root/{{ item | basename }}"
+    src: "{{ item }}-part1"
+    fstype: btrfs
+    state: mounted
   loop: "{{ data_disks }}"
   loop_control:
     label: "{{ item }}"
+  ignore_errors: yes
+  changed_when: false
   when: mount_check.results | selectattr('rc', 'equalto', 1) | list | length > 0
 
 - name: Check if data subvolume exists
@@ -44,7 +49,9 @@
   ignore_errors: yes
 
 - name: Unmount the fs
-  command: "umount /mnt/btrfs-root/{{ item | basename }}"
+  ansible.posix.mount:
+    path: /mnt/btrfs-root/{{ item | basename }}
+    state: unmounted
   loop: "{{ data_disks }}"
   loop_control:
     label: "{{ item }}"
