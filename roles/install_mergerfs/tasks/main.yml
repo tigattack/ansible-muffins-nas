@@ -1,12 +1,16 @@
-- name: Get latest release information from GitHub
-  ansible.builtin.uri:
-    url: "https://github.com/trapexit/mergerfs/releases/latest"
-  register: mergerfs_github_release_page
-  check_mode: false
+- name: Find latest release of mergerfs
+  community.general.github_release:
+    user: trapexit
+    repo: mergerfs
+    action: latest_release
+  register: mergerfs_latest_release
+  delegate_to: localhost
+  run_once: true
+  become: false
 
 - name: Set latest mergerfs version fact
   ansible.builtin.set_fact:
-    mergerfs_version: "{{ mergerfs_github_release_page['url'].split('/')[-1] }}"
+    mergerfs_version: "{{ mergerfs_version }}"
 
 - name: Check installed mergerfs version
   ansible.builtin.command:
@@ -21,11 +25,11 @@
   when: installed_mergerfs_version.rc == 0
 
 - name: Debug latest mergerfs version from GitHub
-  debug:
+  ansible.builtin.debug:
     var: mergerfs_version
 
 - name: Debug installed mergerfs version
-  debug:
+  ansible.builtin.debug:
     var: installed_version
   when: installed_mergerfs_version.rc == 0
 
