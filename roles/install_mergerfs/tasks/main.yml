@@ -38,17 +38,20 @@
     mergerfs_package_url: "https://github.com/trapexit/mergerfs/releases/download/{{ mergerfs_version }}/\
       {{ mergerfs_pkg_prefix }}{{ mergerfs_version }}{{ mergerfs_pkg_suffix }}"
 
-- name: Install xz-utils package for .deb package installation
-  ansible.builtin.apt:
-    name: xz-utils
-    state: present
-    update_cache: true
-  become: true
-  when: ansible_pkg_mgr == 'apt' and (installed_version is not defined or 'v' + installed_version != mergerfs_version)
 
-- name: Install mergerfs package with apt
-  ansible.builtin.apt:
-    deb: "{{ mergerfs_package_url }}"
-    state: present
+- name: Install/update mergerfs
   become: true
-  when: ansible_pkg_mgr == 'apt' and (installed_version is not defined or 'v' + installed_version != mergerfs_version)
+  when:
+    - ansible_pkg_mgr == 'apt'
+    - (installed_version is not defined or 'v' + installed_version != mergerfs_version)
+  block:
+    - name: Install xz-utils package for .deb package installation
+      ansible.builtin.apt:
+        name: xz-utils
+        state: present
+        update_cache: true
+
+    - name: Install mergerfs package with apt
+      ansible.builtin.apt:
+        deb: "{{ mergerfs_package_url }}"
+        state: present
