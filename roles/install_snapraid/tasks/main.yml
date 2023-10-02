@@ -1,13 +1,17 @@
 ---
-- name: Get latest release information from GitHub for SnapRAID
-  ansible.builtin.uri:
-    url: "https://github.com/amadvance/snapraid/releases/latest"
-  register: snapraid_github_release_page
-  check_mode: false
+- name: Find latest release of mergerfs
+  community.general.github_release:
+    user: amadvance
+    repo: snapraid
+    action: latest_release
+  register: snapraid_latest_release
+  delegate_to: localhost
+  run_once: true
+  become: false
 
 - name: Set latest SnapRAID version fact
   ansible.builtin.set_fact:
-    snapraid_version: "{{ snapraid_github_release_page['url'].split('/')[-1] }}"
+    snapraid_version: "{{ snapraid_latest_release.tag }}"
 
 - name: Check installed SnapRAID version
   ansible.builtin.command:
@@ -22,11 +26,11 @@
   when: installed_snapraid_version.rc == 0
 
 - name: Debug latest SnapRAID version from GitHub
-  debug:
+  ansible.builtin.debug:
     var: snapraid_version
 
 - name: Debug installed SnapRAID version
-  debug:
+  ansible.builtin.debug:
     var: installed_version
   when: installed_snapraid_version.rc == 0
 
@@ -35,7 +39,7 @@
     snapraid_package_url: "https://github.com/amadvance/snapraid/releases/download/{{ snapraid_version }}/snapraid-{{ snapraid_version.split('v')[1] }}.tar.gz"
 
 - name: Debug latest SnapRAID version from GitHub
-  debug:
+  ansible.builtin.debug:
     var: snapraid_package_url
 
 - name: Install required packages for SnapRAID installation
