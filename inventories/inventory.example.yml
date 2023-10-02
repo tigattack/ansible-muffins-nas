@@ -1,7 +1,6 @@
 ---
----
+
 ungrouped:
   hosts:
     aah-fs01:
       ansible_host: <some ip>
-
