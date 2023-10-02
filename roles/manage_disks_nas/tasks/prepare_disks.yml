@@ -1,0 +1,54 @@
+- name: Create a new partition on data disks
+  ansible.builtin.parted:
+    device: "{{ item }}"
+    number: 1
+    state: present
+    label: gpt
+    part_start: 0%
+    part_end: 100%
+  loop: "{{ data_disks }}"
+
+- name: Format data drives with BTRFS
+  ansible.builtin.filesystem:
+    fstype: btrfs
+    dev: "{{ item }}{{ '-part1' if 'nvme' not in item else '-p1' }}"
+    force: true
+  loop: "{{ data_disks }}"
+  when: not (item ~ '/dev/.*-part1$')
+
+- name: Create a new partition on parity disks
+  ansible.builtin.parted:
+    device: "{{ item }}"
+    number: 1
+    state: present
+    label: gpt
+    part_start: 0%
+    part_end: 100%
+  loop: "{{ parity_disks }}"
+
+- name: Format parity drives with ext4
+  ansible.builtin.filesystem:
+    fstype: ext4
+    dev: "{{ item }}{{ '-part1' if 'nvme' not in item else '-p1' }}"
+    force: true
+  loop: "{{ parity_disks }}"
+  when: not (item ~ '/dev/.*-part1$')
+
+- name: Create a new partition on cache disks
+  ansible.builtin.parted:
+    device: "{{ item }}"
+    number: 1
+    state: present
+    label: gpt
+    part_start: 0%
+    part_end: 100%
+  loop: "{{ cache_disks }}"
+
+- name: Format cache drives with ext4
+  ansible.builtin.filesystem:
+    fstype: ext4
+    dev: "{{ item }}{{ '-part1' if 'nvme' in item else '1' }}"
+    force: true
+  loop: "{{ cache_disks }}"
+  when: not (item ~ '/dev/.*-part1$')
+

@@ -1,0 +1,10 @@
+[Unit]
+Description=mergerfs cold media mount
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/mergerfs -o defaults,allow_other,use_ino,category.create=epmfs {{ data_disks|join(':') }}:{{ mountpoint_media_cold }}
+
+[Install]
+WantedBy=multi-user.target

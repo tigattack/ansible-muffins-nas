@@ -1,0 +1,30 @@
+---
+- name: Ensure mountpoint for media cache exists
+  file:
+    path: "{{ mountpoint_media_cache }}"
+    state: directory
+    mode: '0755'
+
+- name: Ensure mountpoint for media cold exists
+  file:
+    path: "{{ mountpoint_media_cold }}"
+    state: directory
+    mode: '0755'
+
+- name: Deploy mergerfs cache systemd service
+  template:
+    src: mergerfs.media_cache.j2
+    dest: /etc/systemd/system/mergerfs-media-cache.service
+  notify:
+    - Reload systemd
+    - Restart mergerfs media cache
+    - Enable mergerfs media cache
+
+- name: Deploy mergerfs cold systemd service
+  template:
+    src: mergerfs.media_cold.j2
+    dest: /etc/systemd/system/mergerfs-media-cold.service
+  notify:
+    - Reload systemd
+    - Restart mergerfs media cold
+    - Enable mergerfs media cold

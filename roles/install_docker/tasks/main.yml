@@ -1,0 +1,43 @@
+---
+
+- name: docker | Ensure dependencies are installed
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - python3-pip
+    state: present
+
+- name: docker | Ensure additional dependencies are installed (Ubuntu < 20.04//other systems)
+  ansible.builtin.apt:
+    name: gnupg2
+    state: present
+  when: ansible_distribution != 'Ubuntu' or ansible_distribution_version is version('20.04', '<')
+
+- name: docker | Ensure additional dependencies are installed (Ubuntu >= 20.04)
+  ansible.builtin.apt:
+    name: gnupg
+    state: present
+  when: ansible_distribution == 'Ubuntu' and ansible_distribution_version is version('20.04', '>=')
+
+- name: docker | Add Docker GPG APT key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+    dest: /etc/apt/trusted.gpg.d/docker.asc
+    mode: '644'
+    force: true
+
+- name: docker | Add Docker APT Repository
+  ansible.builtin.apt_repository:
+    repo: deb [arch={{ architecture }}] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_lsb.codename }} stable
+    filename: docker
+    state: present
+
+- name: Include | Docker Engine
+  ansible.builtin.include_tasks: engine.yml
+  tags: engine
+
+- name: Include | Docker Compose
+  ansible.builtin.include_tasks: compose.yml
+  tags: compose
+  when: compose_install

@@ -1,0 +1,18 @@
+---
+
+galaxy_info:
+# noqa meta-no-info
+  role_name: install_docker
+  author: tigattack
+  # These are only here to prevent meta-file schema errors.
+  description: Installs/updates Docker and Docker Compose.
+  license: See repository.
+  min_ansible_version: '2.10'
+  # Any Linux platform, just cba to list them all.
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all

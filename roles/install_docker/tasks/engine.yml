@@ -1,0 +1,40 @@
+---
+
+- name: docker engine | Uninstall old versions
+  ansible.builtin.apt:
+    name:
+      - docker
+      - docker-engine
+      - docker.io
+      - containerd
+      - runc
+    state: absent
+
+- name: docker engine | Install Docker
+  ansible.builtin.apt:
+    name:
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-ce
+      - docker-ce-cli
+      - docker-ce-rootless-extras
+    install_recommends: true
+    state: present
+  notify: systemd handler
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Install Docker SDK for Python and PyYaml
+  ansible.builtin.pip:
+    name:
+      - docker
+      - PyYAML
+    executable: pip
+    extra_args: --break-system-packages
+
+
+- name: docker engine | Add user(s) to docker group
+  ansible.builtin.user:
+    name: "{{ user }}"
+    groups: docker
+    append: true
+  ignore_errors: "{{ ansible_check_mode }}"

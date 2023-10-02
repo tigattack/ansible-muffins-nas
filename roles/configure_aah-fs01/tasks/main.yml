@@ -1,0 +1,17 @@
+---
+# - name: Configure fstab
+#   ansible.builtin.include_tasks:
+#     file: configure_fstab.yml
+
+# - name: Configure MergerFS
+#   ansible.builtin.include_tasks:
+#     file: configure_mergerfs.yml
+
+# - name: Configure SnapRAID
+#   ansible.builtin.include_tasks:
+#     file: configure_snapraid.yml
+
+# DO NOT USE IN CURRENT FORM.
+# - name: Maintain ZFS Configuration
+#   ansible.builtin.include_tasks:
+#     file: zfs_configure.yml

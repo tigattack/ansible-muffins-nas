@@ -1,0 +1,20 @@
+---
+- name: Apply Base Config
+  ansible.builtin.include_tasks:
+    file: base_tasks.yml
+
+# - name: Include | repos
+#   ansible.builtin.include_tasks:
+#     file: repos.yml
+
+- name: Include | packages
+  ansible.builtin.include_tasks:
+    file: apps.yml
+
+- name: Apply Keys
+  ansible.builtin.include_tasks:
+    file: keys.yml
+
+- name: apt Maintainance
+  ansible.builtin.include_tasks:
+    file: apt_maintain.yml

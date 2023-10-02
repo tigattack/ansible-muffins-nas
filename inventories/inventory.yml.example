@@ -1,0 +1,7 @@
+---
+---
+aah-fs01:
+  hosts:
+    aah-fs01:
+      ansible_host: <some ip>
+

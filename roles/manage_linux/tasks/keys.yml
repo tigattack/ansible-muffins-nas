@@ -1,0 +1,20 @@
+---
+
+- name: Get user list
+  shell: "getent passwd | awk -F: '{print $1}'"
+  register: user_list
+  changed_when: false
+
+- name: Replace All Keys
+  ansible.posix.authorized_key:
+    user: "{{ item }}"
+    state: present
+    exclusive: true
+    key: https://github.com/monstermuffin.keys
+  with_items:
+    - monstermuffin
+    - muffn
+    - muffin
+  when: item in user_list.stdout_lines
+  register: user_exists
+  changed_when: false

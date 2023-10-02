@@ -1,0 +1,8 @@
+---
+
+architecture: amd64
+
+compose_update: true
+compose_install: true
+
+docker_users: []

@@ -1,0 +1,4 @@
+---
+- name: Prepare disks
+  ansible.builtin.include_tasks:
+    file: prepare_disks.yml

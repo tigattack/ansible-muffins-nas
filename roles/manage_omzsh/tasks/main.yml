@@ -1,0 +1,43 @@
+- name: Update package cache
+  apt:
+    update_cache: yes
+
+- name: Check if Zsh is installed
+  command: dpkg -l | grep -E '^ii\s+zsh\s+'
+  register: zsh_installed
+  changed_when: false
+  ignore_errors: yes
+
+- name: Install Zsh if not installed
+  package:
+    name: zsh
+    state: present
+  when: zsh_installed.rc != 0
+
+- name: Set Zsh as the default shell
+  command: chsh -s /bin/zsh "{{ user }}"
+  when: zsh_installed.rc != 0
+
+- name: Check if Oh-My-Zsh is installed
+  stat:
+    path: "{{ ansible_env.HOME }}/.oh-my-zsh"
+  register: ohmyzsh_installed
+  changed_when: false
+
+- name: Install Oh-My-Zsh if not installed
+  shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  args:
+    executable: /bin/zsh
+  environment:
+    ZSH: "{{ ansible_env.HOME }}/.oh-my-zsh"
+  when: ohmyzsh_installed.stat.exists == False
+
+- name: Set ZSH_THEME to "gnzh"
+  replace:
+    path: "{{ ansible_env.HOME }}/.zshrc"
+    regexp: '^ZSH_THEME=.*$'
+    replace: 'ZSH_THEME="gnzh"'
+
+- name: Set Oh-My-Zsh as the default shell
+  command: chsh -s /bin/zsh "{{ user }}"
+  when: ohmyzsh_installed.stat.exists == True

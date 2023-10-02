@@ -1,0 +1,91 @@
+---
+- name: Get latest release information from GitHub for SnapRAID
+  ansible.builtin.uri:
+    url: "https://github.com/amadvance/snapraid/releases/latest"
+  register: snapraid_github_release_page
+  check_mode: false
+
+- name: Set latest SnapRAID version fact
+  ansible.builtin.set_fact:
+    snapraid_version: "{{ snapraid_github_release_page['url'].split('/')[-1] }}"
+
+- name: Check installed SnapRAID version
+  ansible.builtin.command:
+    cmd: snapraid --version
+  register: installed_snapraid_version
+  ignore_errors: true
+  changed_when: false
+
+- name: Extract installed SnapRAID version number
+  ansible.builtin.set_fact:
+    installed_version: "{{ installed_snapraid_version.stdout.split()[1] }}"
+  when: installed_snapraid_version.rc == 0
+
+- name: Debug latest SnapRAID version from GitHub
+  debug:
+    var: snapraid_version
+
+- name: Debug installed SnapRAID version
+  debug:
+    var: installed_version
+  when: installed_snapraid_version.rc == 0
+
+- name: Determine SnapRAID package download url
+  ansible.builtin.set_fact:
+    snapraid_package_url: "https://github.com/amadvance/snapraid/releases/download/{{ snapraid_version }}/snapraid-{{ snapraid_version.split('v')[1] }}.tar.gz"
+
+- name: Debug latest SnapRAID version from GitHub
+  debug:
+    var: snapraid_package_url
+
+- name: Install required packages for SnapRAID installation
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - libz-dev
+    state: present
+    update_cache: true
+  become: true
+  when: ansible_pkg_mgr == 'apt' and (installed_version is not defined or installed_version != snapraid_version)
+
+- name: Download SnapRAID tarball
+  ansible.builtin.get_url:
+    url: "{{ snapraid_package_url }}"
+    dest: "/tmp/snapraid.tar.gz"
+    mode: '0755'
+  when: ansible_pkg_mgr == 'apt' and (installed_version is not defined or installed_version != snapraid_version)
+
+- name: Extract SnapRAID tarball
+  ansible.builtin.unarchive:
+    src: "/tmp/snapraid.tar.gz"
+    dest: "/tmp/"
+    remote_src: yes
+  when: ansible_pkg_mgr == 'apt' and (installed_version is not defined or installed_version != snapraid_version)
+
+- name: Configure SnapRAID
+  ansible.builtin.command:
+    cmd: "./configure"
+    chdir: "/tmp/snapraid-{{ snapraid_version.split('v')[1] }}"
+  when: ansible_pkg_mgr == 'apt' and (installed_version is not defined or installed_version != snapraid_version)
+
+- name: Compile SnapRAID
+  ansible.builtin.command:
+    cmd: "make"
+    chdir: "/tmp/snapraid-{{ snapraid_version.split('v')[1] }}"
+  when: ansible_pkg_mgr == 'apt' and (installed_version is not defined or installed_version != snapraid_version)
+
+- name: Install SnapRAID
+  ansible.builtin.command:
+    cmd: "sudo make install"
+    chdir: "/tmp/snapraid-{{ snapraid_version.split('v')[1] }}"
+  become: true
+  when: ansible_pkg_mgr == 'apt' and (installed_version is not defined or installed_version != snapraid_version)
+
+- name: Cleanup - Remove SnapRAID tarball and extracted files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "/tmp/snapraid.tar.gz"
+    - "/tmp/snapraid-{{ snapraid_version.split('v')[1] }}"
+  when: ansible_pkg_mgr == 'apt'
