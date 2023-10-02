@@ -1,24 +1,15 @@
 ---
 
-    - name: Check OS distribution
-      command: lsb_release -i -s
-      register: os_distribution
-      changed_when: false
-      failed_when: false
-
-    - name: Update apt cache
-      apt:
+- name: Debian
+  when: ansible_os_family == 'Debian'
+  block:
+    - name: Upgrade all packages
+      ansible.builtin.apt:
         update_cache: yes
         cache_valid_time: 3600
-      when: os_distribution.stdout == 'Ubuntu' or os_distribution.stdout == 'Debian'
-
-    - name: Upgrade all packages
-      apt:
         upgrade: dist
-      when: os_distribution.stdout == 'Ubuntu' or os_distribution.stdout == 'Debian'
 
     - name: Remove unused packages
-      apt:
+      ansible.builtin.apt:
         autoremove: yes
         autoclean: yes
-      when: os_distribution.stdout == 'Ubuntu' or os_distribution.stdout == 'Debian'
