@@ -3,7 +3,7 @@
     path: "/mnt/btrfs-root"
     state: directory
 
-- name: Ensure mount points for main Btrfs filesystem exist
+- name: Ensure mount point directories exist
   ansible.builtin.file:
     path: "/mnt/btrfs-root/{{ item | basename }}"
     state: directory
@@ -43,9 +43,16 @@
     label: "{{ item }}"
   ignore_errors: yes
 
-- name: Ensure fstab entries for main Btrfs filesystem using blockinfile
-  ansible.builtin.blockinfile:
-    path: /etc/fstab
-    block: "{{ lookup('template', 'btrfs_root_fstab.j2') }}"
-    marker: "# {mark} ANSIBLE MANAGED BLOCK - BTRFS ROOT"
-    create: yes
+- name: Unmount the fs
+  command: "umount /mnt/btrfs-root/{{ item | basename }}"
+  loop: "{{ data_disks }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Remove individual mount points
+  ansible.builtin.file:
+    path: "/mnt/btrfs-root/{{ item | basename }}"
+    state: absent
+  loop: "{{ data_disks }}"
+  loop_control:
+    label: "{{ item }}"
