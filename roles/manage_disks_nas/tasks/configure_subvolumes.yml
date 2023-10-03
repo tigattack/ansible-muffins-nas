@@ -26,7 +26,7 @@
     path: "/mnt/btrfs-root/{{ item | basename }}"
     src: "{{ item }}-part1" # TODO: should this use the same -part1 if else 1 logic from prepare_disks?
     fstype: btrfs
-    state: mounted
+    state: ephemeral
   loop: "{{ data_disks }}"
   loop_control:
     label: "{{ item }}"
